@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family:
+      'Syne',
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+  }
+}
