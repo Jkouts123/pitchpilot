@@ -169,7 +169,7 @@ export default function LiveCallScreen({ preCall, onEndCall }) {
     }
     setStatus('connecting')
     try {
-      const { stream, audioContext, sampleRate, rawStreams } = await acquireAudioStream()
+      const { stream, audioContext, sampleRate } = await acquireAudioStream()
       const deepgram = new DeepgramClient({ apiKey: dgKey })
       const socket = await deepgram.listen.v1.createConnection({
         model: 'nova-2',
@@ -185,7 +185,6 @@ export default function LiveCallScreen({ preCall, onEndCall }) {
         audioStopRef.current = attachPCMProcessor({
           stream,
           audioContext,
-          rawStreams,
           onChunk: (buf) => {
             const s = socketRef.current
             if (!s || s.readyState !== 1) return
