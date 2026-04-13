@@ -8,49 +8,44 @@ import { getProspectCompanyLine, getProspectDisplayName } from '../lib/preCallDi
 import { fetchSuggestionPills } from '../lib/suggestionSignal'
 import { parseDeepgramMessage, shouldTriggerCopilot } from '../lib/transcript'
 
-// ── prospect context for AI user messages ─────────────────────────────────────
+// ── user message builders ─────────────────────────────────────────────────────
 
-function buildProspectContext(p) {
-  const lines = []
+function prospectOneLiner(p) {
   const r = p.researchResult
-
   if (r?.person?.name) {
-    lines.push(
-      `Name: ${r.person.name}`,
-      `Role: ${r.person.role || '—'}`,
-      `Company: ${r.person.company || '—'}`,
-    )
-    if (r.companySummary) lines.push(`Company summary: ${r.companySummary}`)
-    if (r.talkingPoints?.length) lines.push(`Talking points: ${r.talkingPoints.join('; ')}`)
-  } else if (p.manualEntry) {
-    lines.push(
-      `Name: ${p.prospectName || '—'}`,
-      `Company: ${p.prospectCompany || '—'}`,
-      `Role: ${p.prospectRole || '—'}`,
-    )
-  } else {
-    lines.push(`LinkedIn URL (reference only): ${p.linkedInUrl || '—'}`)
+    return [r.person.name, r.person.role, r.person.company ? `at ${r.person.company}` : '']
+      .filter(Boolean).join(', ')
   }
-
-  if (p.opener) lines.push(`Suggested call opener (already used): ${p.opener}`)
-  lines.push(`Previous notes: ${p.previousNotes || '—'}`)
-  return lines.join('\n')
+  if (p.manualEntry) {
+    return [p.prospectName, p.prospectRole, p.prospectCompany ? `at ${p.prospectCompany}` : '']
+      .filter(Boolean).join(', ') || '—'
+  }
+  return p.linkedInUrl || '—'
 }
 
 function buildUserPayload(preCall, transcriptText, extraHint) {
-  let body = [
-    '## Prospect context',
-    buildProspectContext(preCall),
+  const r = preCall.researchResult
+  const notesLines = [
+    preCall.previousNotes,
+    r?.companySummary,
+    r?.talkingPoints?.length ? `Key angles: ${r.talkingPoints.join('; ')}` : '',
+    preCall.opener ? `Opener already used: ${preCall.opener}` : '',
+  ].filter(Boolean)
+
+  const lines = [
+    'ABOUT THIS CALL:',
+    `Agent: ${preCall.presetName || '—'}`,
+    `Prospect: ${prospectOneLiner(preCall)}`,
+    notesLines.length ? `Notes: ${notesLines.join(' | ')}` : '',
     '',
-    '## Full transcript (latest at bottom)',
-    transcriptText.trim() || '(no speech yet)',
+    'TRANSCRIPT SO FAR:',
+    transcriptText.trim() || '(call just started — nothing said yet)',
     '',
-    '## Task',
-    'Write exactly one thing the salesperson should say out loud right now. Follow the scripts and frameworks from the knowledge base exactly. Sound like the salesperson who wrote the playbook — natural, sharp, specific. No quotes, no preamble, no bullet points. Just the utterance.',
-  ].join('\n')
-  if (extraHint?.trim()) {
-    body += `\n\n## Priority focus\n${extraHint.trim()}`
-  }
+    'Based on the transcript above and the knowledge base you were given, write the single best thing the salesperson should say right now. If a specific script or framework from the knowledge base fits this exact moment, use it as the foundation. Sound natural, not recited.',
+  ].filter((l) => l !== null)
+
+  let body = lines.join('\n')
+  if (extraHint?.trim()) body += `\n\nFOCUS: ${extraHint.trim()}`
   return body
 }
 

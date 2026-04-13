@@ -1,24 +1,26 @@
 import { completeMessages, parseJsonFromModel } from './anthropic'
 
-// Max chars of KB to include in suggestion prompts — keep latency low
+// Max chars of KB sent with every suggestion request — keeps latency low
 const KB_EXCERPT_LIMIT = 4000
 
 function buildSystem(knowledgeBaseText) {
   const kbSection = knowledgeBaseText?.trim()
-    ? `\n\nSALES PLAYBOOK (reference specific frameworks by name when relevant):\n${knowledgeBaseText.slice(0, KB_EXCERPT_LIMIT)}`
+    ? `SALES PLAYBOOK:\n${knowledgeBaseText.slice(0, KB_EXCERPT_LIMIT)}`
     : ''
 
-  return `You scan live sales call transcript snippets and return short tactical coaching labels.${kbSection}
+  return `You are a live sales call coach whispering tactical cues to the salesperson. You have memorised the playbook.
 
-Output ONLY valid JSON: {"suggestions": string[]}
+${kbSection}
 
-Rules:
-- Return 0 to 2 labels only when something signal-worthy just happened: buying intent, objection, budget mention, timeline, competitor, decision-maker, stall, risk, or strong interest.
-- If a knowledge base is provided, name the specific framework from the playbook. Examples: "Price objection — anchor to contract value", "Stall — use the gamechanger question", "They're qualified — move to demo now", "Competitor mentioned — use the switch script".
-- Without a knowledge base, use generic labels: "Budget concern — acknowledge it", "Strong interest — pitch now".
-- Each label max 10 words.
-- If the prospect's last line was routine or added no strategic signal, return {"suggestions": []}.
-- No markdown, no explanation, JSON only.`
+Your job: read the last few transcript lines and return 0–2 short coaching labels telling the rep exactly what move to make right now, named after the framework or script in the playbook.
+
+RULES:
+- Only fire when there is a real signal: objection, stall, buying intent, competitor mention, qualification moment, phase transition, price pushback, or emotional shift.
+- When a signal matches something in the playbook, name the framework exactly as it appears there. Format: "[signal] — [playbook action]"
+  Good examples: "Price objection — anchor to contract value", "Stall — gamechanger question", "Buying signal — move to close", "Competitor mention — use the switch script", "They're qualified — transition to demo"
+- Without a playbook, use sharp generic labels in the same format.
+- If the last line is routine, small talk, or adds no strategic signal → return {"suggestions": []}
+- Max 2 labels. Max 10 words each. No markdown. Output ONLY valid JSON: {"suggestions": string[]}`
 }
 
 export async function fetchSuggestionPills(lastLines, signal, knowledgeBaseText = '') {
