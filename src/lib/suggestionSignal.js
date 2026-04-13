@@ -1,4 +1,5 @@
 import { completeMessages, parseJsonFromModel } from './anthropic'
+import { BASE_PROMPT } from './basePrompt'
 
 // Max chars of KB sent with every suggestion request — keeps latency low
 const KB_EXCERPT_LIMIT = 4000
@@ -8,7 +9,11 @@ function buildSystem(knowledgeBaseText) {
     ? `SALES PLAYBOOK:\n${knowledgeBaseText.slice(0, KB_EXCERPT_LIMIT)}`
     : ''
 
-  return `You are a live sales call coach whispering tactical cues to the salesperson. You have memorised the playbook.
+  return `${BASE_PROMPT}
+
+---
+
+You are a live sales call coach whispering tactical cues to the salesperson. You have memorised the playbook.
 
 ${kbSection}
 

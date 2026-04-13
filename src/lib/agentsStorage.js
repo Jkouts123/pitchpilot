@@ -1,3 +1,5 @@
+import { BASE_PROMPT } from './basePrompt'
+
 const KEY = 'pitchpilot.agents'
 const OLD_KEY = 'pitchpilot.presets'
 
@@ -69,7 +71,11 @@ export function buildSystemPrompt(knowledgeBaseText) {
     ? `KNOWLEDGE BASE — READ THIS FULLY. THIS IS YOUR ONLY REFERENCE:\n${knowledgeBaseText}`
     : `KNOWLEDGE BASE: None uploaded. Use sharp, human best-practice sales technique.`
 
-  return `You are an AI sales copilot on a live call. Your only job is to give the salesperson exact words to say out loud right now.
+  return `${BASE_PROMPT}
+
+---
+
+You are an AI sales copilot on a live call. Your only job is to give the salesperson exact words to say out loud right now.
 
 CRITICAL RULES:
 - The knowledge base below is your complete bible. Read it fully and follow it precisely for every single response.

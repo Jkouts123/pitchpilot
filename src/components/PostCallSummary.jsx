@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { completeMessages } from '../lib/anthropic'
 import { buildKnowledgeBaseText, buildSystemPrompt } from '../lib/agentsStorage'
+import { BASE_PROMPT } from '../lib/basePrompt'
 import { addDeal } from '../lib/dealsStorage'
 import { getProspectDisplayName } from '../lib/preCallDisplay'
 
@@ -31,9 +32,12 @@ export default function PostCallSummary({ transcript, preCall, onDone, onSaveNav
       setError(null)
       try {
         const kbText = buildKnowledgeBaseText(preCall.knowledgeBase)
-        const system = kbText?.trim()
-          ? `${SUMMARY_INSTRUCTIONS}\n\n${buildSystemPrompt(kbText)}`
-          : SUMMARY_INSTRUCTIONS
+        const system = [
+          BASE_PROMPT,
+          '---',
+          SUMMARY_INSTRUCTIONS,
+          kbText?.trim() ? `\nKNOWLEDGE BASE:\n${kbText}` : '',
+        ].filter(Boolean).join('\n')
 
         const prospectBlock = preCall.researchResult?.person?.name
           ? [
